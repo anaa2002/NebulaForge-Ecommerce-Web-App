@@ -1,0 +1,26 @@
+/* ==========================================================================
+   THE MAIN NAVIGATION BAR
+   ========================================================================== */
+.navbar {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 1.2rem 3rem;
+  background-color: var(--bg-base-dark); 
+  border-bottom: 1px solid rgba(163, 112, 247, 0.15); 
+}
+
+.navbar__logo a {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-forge-cyan);
+  text-decoration: none;
+  letter-spacing: 1px;
+  text-shadow: var(--glow-cyan);
+}
+
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem; 
+}
