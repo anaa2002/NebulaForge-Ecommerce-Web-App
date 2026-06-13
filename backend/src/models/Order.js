@@ -1,5 +1,39 @@
 import mongoose from "mongoose";
 
+const orderItemSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+
+    name: {
+      type: String,
+      required: true,
+    },
+
+    unitPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+
+    lineTotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  { _id: false },
+);
+
 const orderSchema = new mongoose.Schema(
   {
     user: {
@@ -7,25 +41,56 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+
     isGuest: {
       type: Boolean,
       default: false,
     },
+
     items: {
-      type: Array,
+      type: [orderItemSchema],
       required: true,
+      validate: {
+        validator(items) {
+          return items.length > 0;
+        },
+        message: "Order must contain at least one item.",
+      },
     },
+
     totalPrice: {
       type: Number,
       required: true,
+      min: 0,
     },
+
+    totalAmountCents: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    currency: {
+      type: String,
+      default: "usd",
+      lowercase: true,
+    },
+
     paymentStatus: {
       type: String,
-      default: "Completed",
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
     },
-    stripePaymentId: {
+
+    stripePaymentIntentId: {
       type: String,
-      required: true,
+      unique: true,
+      sparse: true,
+    },
+
+    paidAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true },

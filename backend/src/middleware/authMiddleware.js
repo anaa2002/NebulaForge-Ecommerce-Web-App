@@ -30,19 +30,24 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 });
 
 export const optionalAuth = asyncHandler(async (req, res, next) => {
-  let token;
+  const authHeader = req.headers.authorization;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    try {
-      token = req.headers.authorization.split(" ")[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = await User.findById(decoded.id).select("-password");
-    } catch (error) {
-      console.log("Invalid token, treating user as a guest.");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next();
+  }
+
+  try {
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET);
+
+    const user = await User.findById(decoded.userId).select("-password");
+
+    if (user && !user.passwordCreatedAfter?.(decoded.iat)) {
+      req.user = user;
     }
+  } catch (error) {
+    console.log("Invalid token, treating user as a guest.");
   }
 
   next();

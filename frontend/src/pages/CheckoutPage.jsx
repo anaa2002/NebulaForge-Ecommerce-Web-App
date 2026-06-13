@@ -9,29 +9,63 @@ import CheckoutForm from "../components/CheckoutForm";
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function CheckoutPage() {
-  const { cartSubtotal, cart, setcartSubtotal } = useCart();
+  const { cartSubtotal, cart } = useCart();
+
   const [clientSecret, setClientSecret] = useState("");
+  const [serverTotal, setServerTotal] = useState(null);
+  const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
-    async function fetchPasscode() {
+    if (cart.length === 0) {
+      setClientSecret("");
+      setServerTotal(null);
+      return;
+    }
+
+    let ignore = false;
+
+    async function fetchClientSecret() {
       try {
+        setCheckoutError("");
+        setClientSecret("");
+
+        const cartItems = cart.map((item) => ({
+          productId: item._id,
+          quantity: item.quantity,
+        }));
+
         const response = await api.post("/payment/create-payment-intent", {
-          cartTotal: cartSubtotal,
-          cartItems: cart,
+          cartItems,
         });
+
+        if (ignore) return;
+
         setClientSecret(response.data.clientSecret);
+        setServerTotal(response.data.amount);
       } catch (error) {
-        console.error("Failed to fetch Stripe passcode:", error);
+        if (ignore) return;
+
+        console.error("Failed to create Stripe PaymentIntent:", error);
+
+        setCheckoutError(
+          error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Checkout failed. Please try again.",
+        );
       }
     }
 
-    if (cartSubtotal > 0) {
-      fetchPasscode();
-    }
-  }, [cartSubtotal]);
+    fetchClientSecret();
+
+    return () => {
+      ignore = true;
+    };
+  }, [cart]);
 
   const appearance = { theme: "night" };
   const options = { clientSecret, appearance };
+
+  const displayedTotal = serverTotal ?? cartSubtotal;
 
   return (
     <main
@@ -39,7 +73,15 @@ function CheckoutPage() {
       style={{ padding: "100px 5%", maxWidth: "600px", margin: "0 auto" }}
     >
       <h1>Secure Checkout</h1>
-      <p>Total to pay: ${cartSubtotal.toFixed(2)}</p>
+
+      <p>Total to pay: ${displayedTotal.toFixed(2)}</p>
+
+      {checkoutError && (
+        <p className="error-message" style={{ marginTop: "1rem" }}>
+          {checkoutError}
+        </p>
+      )}
+
       {clientSecret ? (
         <Elements stripe={stripePromise} options={options}>
           <div
@@ -54,7 +96,7 @@ function CheckoutPage() {
           </div>
         </Elements>
       ) : (
-        <p>Establishing secure connection to Stripe...</p>
+        !checkoutError && <p>Establishing secure connection to Stripe...</p>
       )}
     </main>
   );

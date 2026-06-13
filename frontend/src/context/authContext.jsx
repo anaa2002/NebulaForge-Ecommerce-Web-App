@@ -124,17 +124,22 @@ export function AuthProvider({ children }) {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
-        if (!originalRequest) throw error;
+
+        if (!originalRequest) {
+          return Promise.reject(error);
+        }
 
         const isUnauthorized =
           error.response?.status === 401 &&
           error.response?.data?.code === "INVALID_ACCESS_TOKEN";
+
         const wasNotRetriedYet = !originalRequest._retry;
         const isNotRefreshRequest =
           !originalRequest.url.includes("/auth/refresh");
 
         if (isUnauthorized && wasNotRetriedYet && isNotRefreshRequest) {
           originalRequest._retry = true;
+
           try {
             const newToken = await refreshAccessToken();
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -157,8 +162,11 @@ export function AuthProvider({ children }) {
           setUser(null);
           setAccessToken(null);
         }
+
+        return Promise.reject(error);
       },
     );
+
     return () => {
       api.interceptors.response.eject(responseInterceptor);
     };
