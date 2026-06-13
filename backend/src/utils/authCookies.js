@@ -26,7 +26,7 @@ export function setAuthCookies(res, refreshToken, sessionId) {
 export function clearAuthCookies(res) {
   res.clearCookie("refreshToken", {
     ...getRefreshTokenCookieOptions(),
-    path: "/api/auth/refresh",
+    path: "/api/auth",
   });
 
   res.clearCookie("sessionId", {

@@ -171,7 +171,7 @@ async function handlePaymentSucceeded(paymentIntent) {
             $inc: { stock: -item.quantity },
           },
           {
-            new: true,
+            returnDocument: "after",
             session,
           },
         );
