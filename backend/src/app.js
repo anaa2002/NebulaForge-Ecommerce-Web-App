@@ -28,6 +28,20 @@ app.post(
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Nebula Forge API is running",
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Server is healthy",
+  });
+});
+
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/payment", paymentRouter);
